@@ -1,0 +1,123 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <title>SecretChat|Login</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header row mt-4">
+        <div class="offset-md-4 col-md-4">
+          <h1>Secret Chat</h1>
+        </div>
+      </div>
+      <div class="row login-form">
+        <div class="offset-md-4 col-md-4">
+          <% if (typeof errorMessage != 'undefined') { %>
+           <div class="custom-alert alert alert-danger alert-dismissible fade show" role="alert">
+             <%= errorMessage %> 
+            </div>
+          <% } %>
+          <!-- Just for testing ... -->
+          <form id="login-form" method="POST" action="/users/chat">
+            <input
+              class="form-control"
+              id="username"
+              type="text"
+              placeholder="Your Nickname..."
+              name="username"
+            />
+            <div class="radios">
+              <div class="custom-control custom-radio custom-control-inline">
+                <input
+                  type="radio"
+                  id="create"
+                  name="mode"
+                  class="custom-control-input"
+                  value="create"
+                  checked
+                />
+                <label class="custom-control-label" for="create"
+                  >Create Room</label
+                >
+              </div>
+              <div class="custom-control custom-radio custom-control-inline">
+                <input
+                  type="radio"
+                  id="join"
+                  name="mode"
+                  class="custom-control-input"
+                  value="join"
+                />
+                <label class="custom-control-label" for="join">Join Room</label>
+              </div>
+            </div>
+            <div class="room-box">
+              <label class="roomLabel" for="roomId">Enter the room ID</label>
+              <input
+                class="form-control"
+                type="text"
+                placeholder="The room ID..."
+                name="roomId"
+                id="roomId"
+              />
+            </div>
+
+            <div class="room-members form-group">
+              <label for="max-members">Size of room (persons)</label>
+              <select name="maxMembers" class="form-control" id="max-members">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+
+            <input class="form-control mt-3" type="submit" value="Enter" />
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+  <style>
+
+    .custom-alert{
+      color: black;
+      font-weight: bold;
+
+    }
+
+    .room-box {
+      transition: 0.3s;
+      display: none;
+    }
+
+    .roomLabel {
+      color: white;
+      margin-top: 10px;
+    }
+
+    .radios {
+      margin-top: 15px;
+    }
+    .custom-control-label {
+      color: white;
+    }
+
+    .room-members{
+      color: white;
+      margin-top: 15px;
+    }
+  </style>
+
+  <script></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/index.js"></script>
+</html>

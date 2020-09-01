@@ -1,0 +1,9 @@
+/node_modules/
+/routes/test.js
+public/tests/
+public/js/chatTest.js
+views/chatTest.ejs
+certificates/localhost.cert
+certificates/localhost.key
+public/chat22.html
+public/index22.html
