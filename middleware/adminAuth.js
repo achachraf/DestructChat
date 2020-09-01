@@ -2,11 +2,14 @@ const dns = require("dns")
 const dnsPromises = dns.promises;
 
 module.exports = async (req,res,next)=>{
-    let ip = req.headers['x-forwarded-for'] || 
-            req.connection.remoteAddress || 
-            req.socket.remoteAddress ||
-            (req.connection.socket ? req.connection.socket.remoteAddress : null);
-    ip = req.connection.remoteAddress.replace("::ffff:","")
+    let ip = req.headers["x-forwarded-for"];
+    if (ip){
+        var list = ipAddr.split(",");
+        ip = list[list.length-1].replace("::ffff:","");
+    } else {
+        ip = req.connection.remoteAddress.replace("::ffff:","");
+    }
+    // ip = req.connection.remoteAddress.
     console.log("my ip: "+ip)
     const result = await dnsPromises.lookup("secretchat12345.ddns.net")
     console.log("dns: "+result.address)
