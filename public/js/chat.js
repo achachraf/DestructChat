@@ -5,12 +5,6 @@ let creatorAESKeys = null;
 $('[data-toggle="tooltip"]').tooltip()
 
 
-// console.log("real chat.js");
-// const username = "<%= username %>"
-// const roomId = "<%= roomId %>"
-
-console.log(username,roomId)
-
 
 
 const messageForm = document.getElementById("message-form")
@@ -19,7 +13,6 @@ const messageInput = document.getElementById("message")
 const sendButton = document.getElementById("send")
 
 socket.on("connect",async ()=>{
-    // const username = sessionStorage.getItem("username");
     AESKeys = generateAESKeys()
     const encryptedAESKeys = await encryptPublic(AESKeys,publicKey)
     socket.emit("join",{id:socket.id,username,roomId,encryptedAESKeys});
@@ -30,16 +23,13 @@ socket.on("connect",async ()=>{
     socket.emit("secret",{encryptedAESKeys})
 
     socket.on("secrets",async (encryptedOthersSecret)=>{
-        console.log("getting secrets...")
-        console.log(encryptedOthersSecret);
         if(othersSecret == null){
             othersSecret = await decryptOthersSecret(encryptedOthersSecret,AESKeys)
         }
         else{
             console.log("receiving others keys...")
             creatorAESKeys = othersSecret.find(key=>key.username === creatorUsername).AESKeys
-            console.log("creatorAESKeys")
-            console.log(creatorAESKeys)
+            
             othersSecret = await decryptOthersSecret(encryptedOthersSecret,creatorAESKeys)
         }
         
@@ -51,9 +41,6 @@ socket.on("connect",async ()=>{
     })
 
     socket.on("welcomeMessage",async (data)=>{
-        console.log("joined")
-        console.log("others secrets :")
-        console.log(othersSecret)
         await addWelcomeMessage(data)
         messageInput.removeAttribute("readonly")
         sendButton.removeAttribute("disabled")
@@ -74,12 +61,7 @@ socket.on("alert",msg=>{
     window.location.href = "/"
 })
 
-// socket.on("disconnect",()=>{
-//     console.log("Socket Disconnected")
-//     //alert("You tried to join the chat with iregular way, please join using the common form!, Disconnecting...")
-//     alert("Disconnecting")
-//     window.location.href = "/"
-// })
+
 
 
 socket.on("userLeave",username=>{
@@ -87,10 +69,8 @@ socket.on("userLeave",username=>{
 })
 
 messageForm.addEventListener('submit',async (e)=>{
-    console.log(othersSecret)
     e.preventDefault()
     const message = messageInput.value
-    console.log(message)
     const encryptedMessage = await encryptMessage(message,AESKeys)
     socket.emit("message",encryptedMessage)
     e.target.elements.message.value = ""
@@ -158,7 +138,6 @@ const addMessageHTML = (username,time,message)=>{
 
 const copyToClipboard = ()=>{
     const roomToken = document.getElementById("roomToken")
-    console.log(roomToken)
     roomToken.select()
     document.execCommand("copy")
 }

@@ -2,6 +2,7 @@
 /routes/test.js
 public/tests/
 public/js/chatTest.js
+public/js/chat22.js
 views/chatTest.ejs
 certificates/localhost.cert
 certificates/localhost.key

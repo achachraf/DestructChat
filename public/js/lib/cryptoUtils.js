@@ -42,15 +42,8 @@ const decryptOthersSecret = async (encryptedOthersSecret,AESKeys)=>{
     const enc = new TextEncoder()
     const dec = new TextDecoder()
 
-    // console.log(encryptedOthersSecret)
-
-    console.log(AESKeys)
-
     const key = await window.crypto.subtle.importKey("raw",enc.encode(AESKeys.secret),"AES-CBC",false,["decrypt"])
-    console.log(key)
-    console.log("wsal")
     const buffer = window.converterWrapper.base64StringToArrayBuffer(encryptedOthersSecret)
-    // console.log(buffer)
     const decryptedAES = await window.crypto.subtle.decrypt({
         name:"AES-CBC",
         iv: enc.encode(AESKeys.iv)
@@ -58,7 +51,6 @@ const decryptOthersSecret = async (encryptedOthersSecret,AESKeys)=>{
       key,
       buffer
     )
-    console.log("haaa")
     let secretsList = JSON.parse(dec.decode(decryptedAES))
     return secretsList
 }
@@ -81,7 +73,6 @@ const decryptMessage = async (encryptedMessage,AESKeys) =>{
     const enc = new TextEncoder()
     const dec = new TextDecoder()
     const key = await window.crypto.subtle.importKey("raw",enc.encode(AESKeys.secret),"AES-CBC",false,["decrypt"])
-    console.log(key)
     const decryptedAES = await window.crypto.subtle.decrypt({
         name:"AES-CBC",
         iv: enc.encode(AESKeys.iv)

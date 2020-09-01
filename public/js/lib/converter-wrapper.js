@@ -26,7 +26,6 @@
 
     function convertPemToBinary2(pem) {
         var lines = pem.split('\n');
-        console.log(lines)
         var encoded = '';
         for(var i = 0;i < lines.length;i++){
             if (lines[i].trim().length > 0 &&
