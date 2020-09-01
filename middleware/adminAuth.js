@@ -4,7 +4,7 @@ const dnsPromises = dns.promises;
 module.exports = async (req,res,next)=>{
     let ip = req.headers["x-forwarded-for"];
     if (ip){
-        var list = ipAddr.split(",");
+        var list = ip.split(",");
         ip = list[list.length-1].replace("::ffff:","");
     } else {
         ip = req.connection.remoteAddress.replace("::ffff:","");
