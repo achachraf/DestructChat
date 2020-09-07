@@ -29,7 +29,7 @@ app.use(express.static(path.join(__dirname,"public")))
 
 app.get("/",(req,res)=>{
     const ip = req.connection.remoteAddress
-    console.log(ip)
+    // console.log(ip)
     return res.render("index")
 })
 

@@ -24,7 +24,7 @@ body{
 
 
 .login-form{
-    margin-top: 20%;
+    margin-top: 3%;
 }
 
 .chat-box{
@@ -79,6 +79,31 @@ body{
 	font-size: 25px;
 }
 
+.typing{
+	font-size: 17px;
+	color: #c6c3c3;
+	font-style: italic;
+	margin-left: 15px;
+}
+
+.message-bot{
+	padding: 10px;
+	margin-bottom: 15px;
+	background-color: #c8c8c8;
+	border-radius: 5px;
+}
+
+.message-bot .meta{
+	font-size: 15px;
+	font-weight: bold;
+	color: black;
+	margin-bottom: 7px;
+}
+
+.message-bot .meta span{
+	color: white;
+
+}
 /* .clipboard-icon{
 	margin-lef
 } */

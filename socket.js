@@ -10,7 +10,10 @@ const {
   isCreator,
   getUserByUsername,
   getUsersByRoomId,
-  removeUsersInRoom
+  removeUsersInRoom,
+  getUsers,
+  removeUserByUsername,
+  clearInexistUsers
   
 } = require("./data/users");
 const { formatMessage } = require("./utils/formatMessage");
@@ -18,6 +21,8 @@ const { formatMessage } = require("./utils/formatMessage");
 const {getOthersSecret, getRoomKeys,addKey, getUserAESKeys, removeRoom} = require("./data/rooms")
 
 const {encryptOthersSecret,getSecretAES,encryptBotMessage,isAESKeys} = require("./utils/customCrypto")
+
+const {isIpExist,setIp,getIp,isBanned} = require("./data/connections")
 
 let socketId;
 
@@ -27,11 +32,43 @@ function getScoketId() {
 
 let ioSocket;
 
+let connections = new Map()
+
 const runsocket = (io) => {
   ioSocket = io;
   io.on("connection", (socket) => {
     console.log("new WS Connection: " + socket.id);
+    // console.log("socket ip : " + socket.handshake.address)
+    
+    let joiningTimeout
+    socket.on("sendUsername",({username,roomId})=>{
+      joiningTimeout = setTimeout(()=>{
+        socket.emit("alert", "You're trying to access chat from insecure contexte")
+        socket.disconnect()
+        // clearInexistUsers()
+        removeUserByUsername(username,roomId)
+      },5000)
+    })
+
+    //timeout for the insecure connections
+   
     socket.on("join", async (user) => {
+
+      //clear timeout
+      clearTimeout(joiningTimeout)
+
+
+      //check & init antiSpam 
+      let ip = socket.handshake.address.replace("::ffff","")
+      if(isIpExist(ip)){
+        if(isBanned(ip)){
+          socket.emit("alert","This IP is banned")
+          socket.disconnect()
+          return;
+        }
+      }
+      setIp(ip,{count:0,time:null,banned:false})
+
       const {username,id,roomId,encryptedAESKeys} = user;
 
       console.log(`User Connected (${username},${id},${roomId})`);
@@ -46,13 +83,13 @@ const runsocket = (io) => {
         socket.disconnect(true);
         console.log("disconnecting Hacker!");
       } 
+      // if user exist in room
       else if (userExist(user)) {
         socket.disconnect(true);
         console.log("User exist already!, disconnecting...");
       } 
       else {
-
-        const privateKey = getUserPrivateKey(username)
+        const privateKey = getUserPrivateKey(username,roomId)
         const AESKeys = getSecretAES(encryptedAESKeys,privateKey)
         if(!AESKeys || !isAESKeys(AESKeys)){
           socket.emit("alert","Error in configuring securtiy layers, Disconnecting!")
@@ -128,6 +165,11 @@ const runsocket = (io) => {
           })
         }
 
+        //typing
+        socket.on("typing",username=>{
+          socket.broadcast.to(roomId).emit("typing",username)
+        })
+
         //Broadcast exiting
         socket.on("disconnect", () => {
           if(isCreator(username)){
@@ -163,13 +205,42 @@ const runsocket = (io) => {
           //the msg is encrypted here, and no need to decrypt
           const data = formatMessage(username, msg);
           io.to(roomId).emit("message", data);
+          if(ip){
+            let ipObj = getIp(ip)
+            console.log("ipObj :")
+            console.log(ipObj)
+            let {time,count} = ipObj
+            if(count === 0 ){
+              console.log("okk?")
+              let now = (new Date()).getTime()
+              setIp(ip,{...ipObj,time:now,count:1})
+              console.log(connections)
+            }
+            else if(count === 8){
+              console.log("dkhal?")
+              let diff = ((new Date()).getTime() - time)
+              console.log("diff: "+diff)
+              if(diff < 5000){
+                setIp(ip,{...ipObj,banned:true})
+                socket.emit("alert","Spam detected")
+                socket.disconnect()
+              }
+              else{
+                setIp(ip,{...ipObj,time:null,count:0})
+              }              
+            }
+            else{
+              setIp(ip,{...ipObj,count:count+1})
+            }
+          }
         });
       }
-
       
     });
   });
-};
+
+  
+};  
 
 const disconnectSocket = (id) => {
   ioSocket.sockets.sockets[id.trim()].disconnect();

@@ -15,10 +15,11 @@ function updateUser(user) {
   if (!getUserByUsername(user.username)) return null;
   let newUser;
   users = users.map((usr) => {
-    if (usr.username === user.username) {
+    if (usr.username === user.username && usr.roomId === user.roomId) {
       newUser = { ...usr, id: user.id };
       return newUser;
-    } else return usr;
+    } 
+    else return usr;
   });
   return newUser;
 }
@@ -66,14 +67,20 @@ function userInRoom(username,roomId){
 
 function getUsersByRoomId(roomId){
   return users.filter(user=>user.roomId === roomId)
+  
 }
 
 function removeUsersInRoom(roomId){
   users = users.filter(user=>user.roomId !== roomId)
+  console.log("users after fitering:")
+  for(let user of users){
+    console.log("username: " + user.username + " | roomId: "+user.roomId)
+  }
+
 }
 
-function getUserPrivateKey(username){
-  let user = users.find(user=>user.username == username)
+function getUserPrivateKey(username,roomId){
+  let user = users.find(user=>user.username == username && user.roomId === roomId)
   if(user) return user.rsaKeys.privateKey
   return null;
 }
@@ -84,6 +91,14 @@ function isCreator(username){
 
 function getCreator(roomId){
   return users.find(user=>user.roomId === roomId && user.creator === true)
+}
+
+function removeUserByUsername(username,roomId){
+  users = users.filter(user=>user.username !== username && user.roomId !== roomId)
+}
+
+function clearInexistUsers(){
+  users = users.filter(user=>user.id !== null)
 }
 
 module.exports = {
@@ -100,5 +115,7 @@ module.exports = {
   removeUsersInRoom,
   getUserPrivateKey,
   getCreator,
-  isCreator
+  isCreator,
+  removeUserByUsername,
+  clearInexistUsers
 };

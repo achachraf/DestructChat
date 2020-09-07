@@ -20,12 +20,31 @@ const {
 
 const router = require("express").Router()
 const crypto = require("crypto");
+const { isBanned, isBanDone, unBan } = require("../data/connections");
 
 const sleep = ms=> new Promise((resolve,reject)=>setTimeout(()=>{resolve()},ms));
 
 
 router.post("/chat",async (req,res)=>{
     console.log(req.body)
+
+    //banned check
+    let ip = req.headers["x-forwarded-for"];
+    if (ip){
+        var list = ip.split(",");
+        ip = list[list.length-1].replace("::ffff:","");
+    } else {
+        ip = req.connection.remoteAddress.replace("::ffff:","");
+    }
+    if(isBanned(ip)){
+        if(!isBanDone(ip)){
+            return res.render("error",{error:"You're Banned from the chat"})
+        }
+        else{
+            unBan(ip)
+        }
+    }
+
     let {username,mode,roomId,maxMembers} = req.body
     if(username == "")
         return res.status(400).render("index",{errorMessage:"User cannot be empty"})

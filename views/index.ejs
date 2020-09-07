@@ -10,23 +10,30 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-    <title>SecretChat|Login</title>
+    <title>DesctructChat|Login</title>
   </head>
   <body>
     <div class="container">
       <div class="header row mt-4">
         <div class="offset-md-4 col-md-4">
-          <h1>Secret Chat</h1>
+          <h1>Destruct Chat</h1>
         </div>
       </div>
-      <div class="row login-form">
+
+      <div class="row">
         <div class="offset-md-4 col-md-4">
+          <img src="/img/logo.png" class="img-fluid" />
+        </div>
+      </div>
+
+      <div class="row login-form">
+        <div class="offset-lg-3 offset-md-2 col-lg-6 col-md-8 ">
           <% if (typeof errorMessage != 'undefined') { %>
            <div class="custom-alert alert alert-danger alert-dismissible fade show" role="alert">
              <%= errorMessage %> 
             </div>
           <% } %>
-          <!-- Just for testing ... -->
+
           <form id="login-form" method="POST" action="/users/chat">
             <input
               class="form-control"

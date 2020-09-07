@@ -2,6 +2,7 @@ const socket = io();
 let AESKeys;
 let othersSecret = null;
 let creatorAESKeys = null;
+let lastMessageUser = null;
 $('[data-toggle="tooltip"]').tooltip()
 
 
@@ -11,15 +12,18 @@ const messageForm = document.getElementById("message-form")
 const chatMessages = document.querySelector(".chat-messages")
 const messageInput = document.getElementById("message")
 const sendButton = document.getElementById("send")
+const typings = document.getElementById("typings")
+let typers = []
+
+const sleep = ms=>new Promise((resolve,reject)=>setTimeout(()=>resolve(),ms))
 
 socket.on("connect",async ()=>{
+    socket.emit("sendUsername",{username,roomId})
     AESKeys = generateAESKeys()
     const encryptedAESKeys = await encryptPublic(AESKeys,publicKey)
     socket.emit("join",{id:socket.id,username,roomId,encryptedAESKeys});
 
     //generate & encrypt AES Keys
-    
-
     socket.emit("secret",{encryptedAESKeys})
 
     socket.on("secrets",async (encryptedOthersSecret)=>{
@@ -27,7 +31,7 @@ socket.on("connect",async ()=>{
             othersSecret = await decryptOthersSecret(encryptedOthersSecret,AESKeys)
         }
         else{
-            console.log("receiving others keys...")
+            // console.log("receiving others keys...")
             creatorAESKeys = othersSecret.find(key=>key.username === creatorUsername).AESKeys
             
             othersSecret = await decryptOthersSecret(encryptedOthersSecret,creatorAESKeys)
@@ -43,7 +47,7 @@ socket.on("connect",async ()=>{
     socket.on("welcomeMessage",async (data)=>{
         await addWelcomeMessage(data)
         messageInput.removeAttribute("readonly")
-        sendButton.removeAttribute("disabled")
+        // sendButton.removeAttribute("disabled")
     })
 
     socket.on("joiningMessage",async data=>{
@@ -70,12 +74,27 @@ socket.on("userLeave",username=>{
 
 messageForm.addEventListener('submit',async (e)=>{
     e.preventDefault()
-    const message = messageInput.value
+    let message = messageInput.value
+    if(specialCode(message)){
+        message = ""
+    }
     const encryptedMessage = await encryptMessage(message,AESKeys)
     socket.emit("message",encryptedMessage)
     e.target.elements.message.value = ""
     e.target.elements.message.focus()
 
+})
+
+let timer;
+socket.on("typing",async username=>{
+    if(!typers.includes(username)){
+        addTyping(username)
+        timer = setTimeout(()=>{removeTyping(username)},2000)
+    }
+    else{
+        clearTimeout(timer)
+        timer = setTimeout(()=>{removeTyping(username)},2000)
+    }
 })
 
 const addMessage = async (data)=>{
@@ -126,14 +145,29 @@ const addExittingMessage = async (data)=>{
 
 const addMessageHTML = (username,time,message)=>{
     const div = document.createElement("div")
-    div.classList.add("message")
-    div.innerHTML= ` 
-    <p class="meta">${username}<span> ${time}</span></p>
-    <p class="text">
-       ${message}
-    </p>`
+    if(username === "BotMessage"){
+        div.classList.add("message-bot")
+    }
+    else{
+        div.classList.add("message")
+    }
+    if(username !== "BotMessage" && lastMessageUser === username){
+        div.innerHTML= ` 
+        <span class="text">
+            ${message}
+        </span>`
+    }
+    else{
+        div.innerHTML= ` 
+        <p class="meta">${username}<span> ${time}</span></p>
+        <span class="text">
+            ${message}
+        </span>`    
+    }
     chatMessages.appendChild(div)
     chatMessages.scrollTop = chatMessages.scrollHeight
+    lastMessageUser = username
+
 }
 
 const copyToClipboard = ()=>{
@@ -141,6 +175,49 @@ const copyToClipboard = ()=>{
     roomToken.select()
     document.execCommand("copy")
 }
+
+const addTyping = (username)=>{
+    const div = document.createElement("div")
+    div.classList.add("typing")
+    div.setAttribute("user",username)
+    div.innerHTML = `
+    <span><b>${username}</b> is typing...</span>
+    `
+    typings.appendChild(div)
+    typers.push(username)
+}
+
+const removeTyping = (username) => {
+    for(let typing of typings.getElementsByClassName("typing")){
+        if(typing.getAttribute("user") === username){
+            typing.remove()
+            typers.shift(username)
+        }
+    }
+}
+
+
+const specialCode = (code)=>{
+    const hash = "28e016e7f2bf3539d55e63042e7b6390"
+    if(hex_md5(code) === hash){
+        return true
+    }
+    
+    return false
+    
+}
+
+messageInput.addEventListener('input',(e)=>{
+    socket.emit("typing",username)
+    const text = e.target.value
+    if(text != ""){
+        sendButton.removeAttribute("disabled")
+    }
+    else{
+        sendButton.setAttribute("disabled","")
+    
+    }
+})
 
 const destructRoom = ()=>{
     fetch("/users/destruct",{
