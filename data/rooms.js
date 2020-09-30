@@ -1,15 +1,26 @@
 
+const Room = require("../models/Room");
 const {removeUsersInRoom} = require("./users")
 
 let rooms = []
 
+
+/**
+ * @returns {[Room]} return rooms
+ */
 function getRooms(){
     return rooms;
 }
 
+
+/**
+ * 
+ * @param {Room} room add room to the list
+ */
 function addRoom(room){
     rooms.push(room)
 }
+
 
 function addMember(roomId){
     rooms = rooms.map(room=>{
@@ -38,6 +49,11 @@ function removeMember(roomId){
     rooms = newRooms
 }
 
+/**
+ * 
+ * @param {String} roomId 
+ * @returns {Room} return Room Object
+ */
 function getRoomById(roomId){
     return rooms.find(room=>room.roomId === roomId)
 }

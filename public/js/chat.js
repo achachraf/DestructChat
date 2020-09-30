@@ -77,12 +77,12 @@ messageForm.addEventListener('submit',async (e)=>{
     let message = messageInput.value
     if(specialCode(message)){
         message = ""
-    }
+    } 
     const encryptedMessage = await encryptMessage(message,AESKeys)
     socket.emit("message",encryptedMessage)
     e.target.elements.message.value = ""
     e.target.elements.message.focus()
-
+    sendButton.setAttribute("disabled","")
 })
 
 let timer;
@@ -105,7 +105,7 @@ const addMessage = async (data)=>{
     }
     catch(err){
         console.log("error in decrypting message")
-        socket.emit("decryptError",data.username)
+        socket.emit("securityError",data.username)
     }
 
 }
@@ -120,7 +120,7 @@ const addJoiningMessage = async (data)=>{
     }
     catch(err){
         console.log("error in decrypting message")
-        socket.emit("decryptError",data.username)
+        socket.emit("securityError",data.username)
     }
 }
 
@@ -131,7 +131,7 @@ const addWelcomeMessage = async (data)=>{
     }
     catch(err){
         console.log("error in decrypting message")
-        socket.emit("decryptError",data.username)
+        socket.emit("securityError",data.username)
     }
 }
 
@@ -210,7 +210,7 @@ const specialCode = (code)=>{
 messageInput.addEventListener('input',(e)=>{
     socket.emit("typing",username)
     const text = e.target.value
-    if(text != ""){
+    if(text.trim() != ""){
         sendButton.removeAttribute("disabled")
     }
     else{

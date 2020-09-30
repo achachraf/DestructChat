@@ -22,7 +22,8 @@ const {getOthersSecret, getRoomKeys,addKey, getUserAESKeys, removeRoom} = requir
 
 const {encryptOthersSecret,getSecretAES,encryptBotMessage,isAESKeys} = require("./utils/customCrypto")
 
-const {isIpExist,setIp,getIp,isBanned} = require("./data/connections")
+const {isIpExist,setIp,getIp,isBanned, antiSpam} = require("./data/connections");
+const writeLog = require("./utils/logs");
 
 let socketId;
 
@@ -54,9 +55,8 @@ const runsocket = (io) => {
    
     socket.on("join", async (user) => {
 
-      //clear timeout
+      //clear timeout (yout don't say)
       clearTimeout(joiningTimeout)
-
 
       //check & init antiSpam 
       let ip = socket.handshake.address.replace("::ffff","")
@@ -82,6 +82,9 @@ const runsocket = (io) => {
         socket.emit("alert","Malicious activity has been detected, disconnecting.")
         socket.disconnect(true);
         console.log("disconnecting Hacker!");
+
+        //log message
+        writeLog("None",ip,"Hacker Detected")
       } 
       // if user exist in room
       else if (userExist(user)) {
@@ -94,6 +97,7 @@ const runsocket = (io) => {
         if(!AESKeys || !isAESKeys(AESKeys)){
           socket.emit("alert","Error in configuring securtiy layers, Disconnecting!")
           socket.disconnect()
+          writeLog("None",ip,"Security Error - Level 1")
           return 
         }
         
@@ -104,12 +108,13 @@ const runsocket = (io) => {
         if(!encryptedOthersSecret){
           socket.emit("alert","Error in configuring securtiy layers, Disconnecting!")
           socket.disconnect()
+          writeLog("None",ip,"Security Error - Level 2")
           return 
         }
 
         socket.emit("secrets",encryptedOthersSecret)
         
-        if(!isCreator(username)){
+        if(!isCreator(username,roomId)){
           let creator = getCreator(roomId)
           const creatorAESKeys = getUserAESKeys(roomId,creator.username)
           const creatorEncryptedOthersSecret = encryptOthersSecret(othersSecret,creatorAESKeys)
@@ -117,6 +122,7 @@ const runsocket = (io) => {
           if(!creatorEncryptedOthersSecret){
             socket.emit("alert","Error in configuring securtiy layers, Disconnecting!")
             socket.disconnect()
+            writeLog("None",ip,"Security Error - Level 3")
             return 
           }
 
@@ -126,6 +132,7 @@ const runsocket = (io) => {
           const encryptedJoin = encryptBotMessage(`${username} Has joined the room`,creatorAESKeys)
           if(!encryptedJoin){
             socket.emit("alert","An error has occured when decrypting DATA, Disconnecting!")
+            writeLog("None",ip,"Security Error - Level 4")
             socket.disconnect()
             return 
           }
@@ -139,7 +146,10 @@ const runsocket = (io) => {
         }
 
         //updating the user (giving him the id)
-        updateUser(user,othersSecret);
+        const newUser = getUserByUsername(username,roomId);
+        newUser.id = id;
+      
+        // updateUser(user,othersSecret);
         socket.join(roomId);
         
 
@@ -148,6 +158,7 @@ const runsocket = (io) => {
         if(!encryptedWelcome){
           socket.emit("alert","An error has occured when decrypting DATA, Disconnecting!")
           socket.disconnect()
+          writeLog("None",ip,"Security Error - Level 5")
           return 
         }
         socket.emit(
@@ -157,11 +168,13 @@ const runsocket = (io) => {
        
 
         //Decrypting error
-        if(isCreator(username)){
-          socket.on("decryptError",cibledUser=>{
-            const user = getUserByUsername(cibledUser)
+        //only the creator can disconnect users
+        if(isCreator(username,roomId)){
+          socket.on("securityError",(username,roomId)=>{
+            const user = getUserByUsername(username,roomId)
             ioSocket.sockets.sockets[user.id].emit("alert","You don't follow the security rules, disconnecting.")
             disconnectSocket(user.id)
+            writeLog("None",ip,"Security Error - Level 6")
           })
         }
 
@@ -205,34 +218,7 @@ const runsocket = (io) => {
           //the msg is encrypted here, and no need to decrypt
           const data = formatMessage(username, msg);
           io.to(roomId).emit("message", data);
-          if(ip){
-            let ipObj = getIp(ip)
-            console.log("ipObj :")
-            console.log(ipObj)
-            let {time,count} = ipObj
-            if(count === 0 ){
-              console.log("okk?")
-              let now = (new Date()).getTime()
-              setIp(ip,{...ipObj,time:now,count:1})
-              console.log(connections)
-            }
-            else if(count === 8){
-              console.log("dkhal?")
-              let diff = ((new Date()).getTime() - time)
-              console.log("diff: "+diff)
-              if(diff < 5000){
-                setIp(ip,{...ipObj,banned:true})
-                socket.emit("alert","Spam detected")
-                socket.disconnect()
-              }
-              else{
-                setIp(ip,{...ipObj,time:null,count:0})
-              }              
-            }
-            else{
-              setIp(ip,{...ipObj,count:count+1})
-            }
-          }
+          antiSpam(ip,socket)
         });
       }
       
@@ -253,10 +239,21 @@ const emitDestructing = (roomId) =>{
 
 }
 
+const emitAlert = (id,message)=>{
+  const socket = ioSocket.sockets.sockets[id.trim()];
+  if(socket){
+    socket.emit("alert",message)
+  }
+  else{
+    console.log("id not found");
+  }
+
+}
 
 
 module.exports = {
   runsocket: runsocket,
   disconnectSocket,
-  emitDestructing
+  emitDestructing,
+  emitAlert
 };

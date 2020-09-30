@@ -18,9 +18,16 @@ const {
     removeRoom,
     getRoomKeys } = require("../data/rooms");
 
+const User = require("./../models/User")
+
 const router = require("express").Router()
 const crypto = require("crypto");
 const { isBanned, isBanDone, unBan } = require("../data/connections");
+const Room = require("../models/Room");
+const fs = require("fs")
+const moment = require("moment");
+const writeLog = require("../utils/logs");
+
 
 const sleep = ms=> new Promise((resolve,reject)=>setTimeout(()=>{resolve()},ms));
 
@@ -46,8 +53,10 @@ router.post("/chat",async (req,res)=>{
     }
 
     let {username,mode,roomId,maxMembers} = req.body
-    if(username == "")
+    if(username == ""){
         return res.status(400).render("index",{errorMessage:"User cannot be empty"})
+    }
+    console.log(userInRoom)
     if(userInRoom(username,roomId)){
         return res.status(301).render("index",{errorMessage:"User already exist in room"})
     }
@@ -60,7 +69,8 @@ router.post("/chat",async (req,res)=>{
             return res.status(400).render("error",{error:"Invalid Request"})
 
         roomId =  randomToken()
-        addRoom({roomId,maxMembers,members:1,keys:[]})
+        const room = new Room(roomId,maxMembers,1)
+        addRoom(room)
         creator = true
         creatorUsername = username
     }
@@ -78,35 +88,30 @@ router.post("/chat",async (req,res)=>{
         //getting keys before adding the member
         othersSecret = getRoomKeys(roomId)
         creatorUsername = getCreator(roomId).username
-        addMember(roomId)
+        // addMember(roomId)
+        room.members = room.members + 1
         console.log(room);
     }
     else{
         return res.status(400).render("error",{error:"Invalid Request"})
     }
 
+
     //generating RSA Keys 
-    const rsaKeys = crypto.generateKeyPairSync('rsa',{
-        modulusLength: 2048, 
-        publicKeyEncoding: { 
-            type: 'spki', 
-            format: 'pem'
-        }, 
-        privateKeyEncoding: { 
-            type: 'pkcs8', 
-            format: 'pem'
-        } 
-    })
+    
+    const user = new User(null,username,roomId,creator)
+    user.generatreRsaKeys()
+    addUser(user)
 
-    addUser({username,id:null,roomId,creator,rsaKeys})
-
+    //log connection
+    writeLog(mode,ip)
 
     return res.render("chat",{
         username,
         roomId,
         creatorUsername,
         creator,
-        publicKey:JSON.stringify(rsaKeys.publicKey)
+        publicKey:JSON.stringify(user.rsaKeys.publicKey)
     })
 })
 
@@ -114,8 +119,8 @@ router.post("/chat",async (req,res)=>{
 router.post("/destruct",(req,res)=>{
     const {id} = req.body
     const user = getUserById(id)
-    console.log("creator: ")
-    console.log(user)
+    // console.log("creator: ")
+    // console.log(user)
     if(!user){
         return res.render("error",{error:"Invalid Request"})
     }

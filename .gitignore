@@ -8,3 +8,4 @@ certificates/localhost.cert
 certificates/localhost.key
 public/chat22.html
 public/index22.html
+logs.txt
