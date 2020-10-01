@@ -25,15 +25,7 @@ const {encryptOthersSecret,getSecretAES,encryptBotMessage,isAESKeys} = require("
 const {isIpExist,setIp,getIp,isBanned, antiSpam} = require("./data/connections");
 const writeLog = require("./utils/logs");
 
-let socketId;
-
-function getScoketId() {
-  return socketId;
-}
-
 let ioSocket;
-
-let connections = new Map()
 
 const runsocket = (io) => {
   ioSocket = io;

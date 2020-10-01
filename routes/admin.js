@@ -69,7 +69,6 @@ router.get("/log/",adminAuth,(req,res)=>{
   const reg = /\n/g
   data = data.replace(reg,"<br>")
   return res.send(data);
-  // return res.sendFile(__dirname+"/../logs.txt")
 })
 
 module.exports = router;

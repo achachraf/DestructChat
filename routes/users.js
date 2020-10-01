@@ -119,19 +119,13 @@ router.post("/chat",async (req,res)=>{
 router.post("/destruct",(req,res)=>{
     const {id} = req.body
     const user = getUserById(id)
-    // console.log("creator: ")
-    // console.log(user)
     if(!user){
         return res.render("error",{error:"Invalid Request"})
     }
     if(!user.creator){
         return res.render("index",{errorMessage:"Unauthorized Action, you're kicked!"})
     }
-    //const users = getUsersByRoomId(user.roomId)
     emitDestructing(user.roomId)
-    // for(let usr of users){
-    //     disconnectSocket(usr.id)
-    // }
     removeUsersInRoom(user.roomId)
     removeRoom(user.roomId)
     return res.status(200).send()
